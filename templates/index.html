@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BigQuery Release Notes Explorer & Social Share</title>
+    <meta name="description" content="Explore and share the latest Google BigQuery release notes. Filter, search, and instantly draft tweets about key features and updates.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dark-mode">
+    <div class="background-decorations">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <header class="app-header">
+        <div class="container header-container">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2005/svg">
+                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z" fill="currentColor"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>BigQuery <span>Release Notes</span></h1>
+                    <p class="tagline">Explore and share the latest BigQuery updates instantly</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="refresh-btn" class="btn btn-primary" title="Refresh Release Notes">
+                    <span class="btn-icon refresh-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                        </svg>
+                    </span>
+                    <span class="btn-text">Refresh</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-main container">
+        <!-- Stats Dashboard Section -->
+        <section class="stats-dashboard" id="stats-dashboard">
+            <div class="stat-card total-updates">
+                <span class="stat-num" id="stat-total">0</span>
+                <span class="stat-label">Total Updates</span>
+            </div>
+            <div class="stat-card type-feature">
+                <span class="stat-num" id="stat-features">0</span>
+                <span class="stat-label">Features</span>
+            </div>
+            <div class="stat-card type-announcement">
+                <span class="stat-num" id="stat-announcements">0</span>
+                <span class="stat-label">Announcements</span>
+            </div>
+            <div class="stat-card type-breaking">
+                <span class="stat-num" id="stat-breaking">0</span>
+                <span class="stat-label">Breaking / Issues</span>
+            </div>
+        </section>
+
+        <!-- Search and Filters Section -->
+        <section class="filter-section">
+            <div class="search-box">
+                <span class="search-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
+                <input type="text" id="search-input" placeholder="Search release notes (e.g. Gemini, SQL, pipelines...)" autocomplete="off">
+                <button id="search-clear-btn" class="search-clear-btn" aria-label="Clear search" style="display: none;">
+                    &times;
+                </button>
+            </div>
+
+            <div class="filter-pills-container">
+                <div class="filter-label">Filter:</div>
+                <div class="filter-pills" id="filter-pills">
+                    <button class="filter-pill active" data-category="all">All Updates</button>
+                    <button class="filter-pill" data-category="feature">Features</button>
+                    <button class="filter-pill" data-category="announcement">Announcements</button>
+                    <button class="filter-pill" data-category="issue">Issues</button>
+                    <button class="filter-pill" data-category="breaking">Breaking</button>
+                    <button class="filter-pill" data-category="change">Changes</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Active Filters Feedback & Feed Meta -->
+        <div class="feed-meta-bar">
+            <div class="feed-status" id="feed-status">
+                Loading release notes...
+            </div>
+            <div class="feed-last-fetched" id="last-fetched-time">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+
+        <!-- Release Notes Timeline/Feed -->
+        <section class="release-feed" id="release-feed">
+            <!-- Loading Skeleton Cards -->
+            <div class="skeleton-container" id="skeleton-container">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+            <!-- Cards will be injected here -->
+            <div id="cards-container" class="cards-container" style="display: none;"></div>
+            
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div class="empty-icon">📂</div>
+                <h3>No updates found</h3>
+                <p>We couldn't find any release notes matching your search or filters.</p>
+                <button id="reset-filters-btn" class="btn btn-secondary">Clear Filters</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer">
+        <div class="container footer-container">
+            <p>BigQuery Release Notes Explorer &copy; 2026. Data fetched from the official Google Cloud Feed.</p>
+            <p class="disclaimer">This app is not affiliated with Google or X / Twitter.</p>
+        </div>
+    </footer>
+
+    <!-- Tweet Composer Modal -->
+    <div class="modal-overlay" id="tweet-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Share Update on X / Twitter</h3>
+                <button class="modal-close" id="modal-close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Original Card Preview -->
+                <div class="modal-update-preview">
+                    <span class="preview-badge" id="modal-update-type">Feature</span>
+                    <span class="preview-date" id="modal-update-date">June 23, 2026</span>
+                    <div class="preview-title" id="modal-update-snippet">Pipeline trigger executions based on updates...</div>
+                </div>
+
+                <!-- Tweet Edit Area -->
+                <div class="tweet-composer-card">
+                    <label for="tweet-textarea" class="field-label">Draft Tweet</label>
+                    <div class="textarea-wrapper">
+                        <textarea id="tweet-textarea" rows="6" maxlength="280"></textarea>
+                    </div>
+                    <div class="tweet-composer-footer">
+                        <span class="char-count" id="tweet-char-count">0 / 280</span>
+                        <div class="composer-shortcuts">
+                            <button id="add-hashtag-bq" class="badge-btn">#BigQuery</button>
+                            <button id="add-hashtag-gcp" class="badge-btn">#GoogleCloud</button>
+                            <button id="add-hashtag-de" class="badge-btn">#DataEngineering</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- X Preview -->
+                <div class="x-preview-card">
+                    <div class="x-avatar">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </div>
+                    <div class="x-preview-content">
+                        <div class="x-preview-header">
+                            <span class="x-name">BigQuery Updates</span>
+                            <span class="x-handle">@BQReleaseNotes</span>
+                            <span class="x-dot">·</span>
+                            <span class="x-time">Just now</span>
+                        </div>
+                        <div class="x-preview-text" id="x-preview-text">
+                            <!-- Live updated via JS -->
+                        </div>
+                        <div class="x-preview-card-attach" id="x-preview-link-card">
+                            <div class="x-card-image">
+                                <div class="bq-logo-placeholder">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="x-card-info">
+                                <div class="x-card-domain">docs.cloud.google.com</div>
+                                <div class="x-card-title">BigQuery Release Notes</div>
+                                <div class="x-card-desc">Google Cloud BigQuery release notes and technical documentation updates feed.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="modal-copy-btn">
+                    <span class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </span>
+                    <span id="copy-btn-text">Copy Tweet</span>
+                </button>
+                <button class="btn btn-x" id="modal-tweet-btn">
+                    <span class="btn-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </span>
+                    Post to X
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast">
+        <span class="toast-message">Message copied!</span>
+    </div>
+
+    <!-- App JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
